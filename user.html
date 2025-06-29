@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Private Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h2 {
+      margin: 20px 0;
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      width: 400px;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    #messages {
+      list-style-type: none;
+      padding: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 10px;
+      clear: both;
+      word-wrap: break-word;
+    }
+
+    .sent {
+      background-color: #dcf8c6;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .received {
+      background-color: #f1f1f1;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>💬 Private Chat App(User side)</h2>
+  <div class="container">
+    <div class="form-group">
+      <label><strong>Your Username:</strong></label>
+      <input id="username" placeholder="Your name" value="user1" />
+      <button onclick="register()">Register</button>
+    </div>
+
+    <div class="form-group">
+      <label><strong>To (username):</strong></label>
+      <input id="toUser" placeholder="Recipient name" value="admin1" />
+    </div>
+
+    <form id="form">
+      <input id="input" placeholder="Type your message..." autocomplete="off" />
+      <button>Send</button>
+    </form>
+
+    <ul id="messages"></ul>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let username = "";
+
+    function register() {
+      username = document.getElementById("username").value.trim();
+      if (!username) return alert("Please enter username");
+      socket.emit("register", username);
+      alert("Registered as: " + username);
+    }
+
+    document.getElementById("form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const message = document.getElementById("input").value.trim();
+      const toUser = document.getElementById("toUser").value.trim();
+      if (!message || !toUser || !username) return;
+
+      // Emit message to server
+      socket.emit("private message", {
+        from: username,
+        to: toUser,
+        message
+      });
+
+      appendMessage("You", message, "sent");
+
+      document.getElementById("input").value = "";
+    });
+
+    socket.on("private message", ({ from, message }) => {
+      appendMessage(from, message, "received");
+    });
+
+    function appendMessage(sender, text, type) {
+      const li = document.createElement("li");
+      li.classList.add("message", type);
+      li.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      document.getElementById("messages").appendChild(li);
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    }
+  </script>
+</body>
+</html>
